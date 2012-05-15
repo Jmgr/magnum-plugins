@@ -30,6 +30,10 @@
 #
 #       set(CMAKE_JAVA_TARGET_OUTPUT_DIR ${PROJECT_BINARY_DIR}/bin)
 #
+#   You can define your own manifest file for your jar:
+#
+#       set(CMAKE_JAVA_JAR_MANIFEST_FILE foobar.manifest)
+#
 #   To define an entry point in your jar you can set it with:
 #
 #       set(CMAKE_JAVA_JAR_ENTRY_POINT com/examples/MyProject/Main)
@@ -211,6 +215,11 @@ function(add_jar _TARGET_NAME)
       set(CMAKE_JAVA_TARGET_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
     endif(NOT DEFINED CMAKE_JAVA_TARGET_OUTPUT_DIR)
 
+    if(CMAKE_JAVA_JAR_MANIFEST_FILE)
+      set(_MANIFEST_FILE_OPTION m)
+      set(_MANIFEST_FILE_VALUE ${CMAKE_JAVA_JAR_MANIFEST_FILE})
+    endif()
+
     if (CMAKE_JAVA_JAR_ENTRY_POINT)
       set(_ENTRY_POINT_OPTION e)
       set(_ENTRY_POINT_VALUE ${CMAKE_JAVA_JAR_ENTRY_POINT})
@@ -336,7 +345,7 @@ function(add_jar _TARGET_NAME)
         add_custom_command(
             OUTPUT ${_JAVA_JAR_OUTPUT_PATH}
             COMMAND ${Java_JAR_EXECUTABLE}
-                -cf${_ENTRY_POINT_OPTION} ${_JAVA_JAR_OUTPUT_PATH} ${_ENTRY_POINT_VALUE}
+                -cf${_MANIFEST_FILE_OPTION}${_ENTRY_POINT_OPTION} ${_JAVA_JAR_OUTPUT_PATH} ${_MANIFEST_FILE_VALUE} ${_ENTRY_POINT_VALUE}
                 ${_JAVA_RESOURCE_FILES} @java_class_filelist
             COMMAND ${CMAKE_COMMAND}
                 -D_JAVA_TARGET_DIR=${CMAKE_JAVA_TARGET_OUTPUT_DIR}
@@ -356,7 +365,7 @@ function(add_jar _TARGET_NAME)
         add_custom_command(
             OUTPUT ${_JAVA_JAR_OUTPUT_PATH}
             COMMAND ${Java_JAR_EXECUTABLE}
-                -cf${_ENTRY_POINT_OPTION} ${_JAVA_JAR_OUTPUT_PATH} ${_ENTRY_POINT_VALUE}
+                -cf${_MANIFEST_FILE_OPTION}${_ENTRY_POINT_OPTION} ${_JAVA_JAR_OUTPUT_PATH} ${_MANIFEST_FILE_VALUE} ${_ENTRY_POINT_VALUE}
                 ${_JAVA_RESOURCE_FILES} @java_class_filelist
             COMMAND ${CMAKE_COMMAND}
                 -D_JAVA_TARGET_DIR=${CMAKE_JAVA_TARGET_OUTPUT_DIR}
