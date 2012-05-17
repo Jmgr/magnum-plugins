@@ -126,4 +126,35 @@ public class StanfordImporterTest {
         StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
             stringReader("element vertex 64\nproperty char y\nproperty double y"));
     }
+
+    @Test
+    public void parseFaceElementHeader() throws StanfordImporter.Exception, IOException {
+        StanfordImporter.FaceElementHeader header = StanfordImporter.parseFaceElementHeader(
+            stringReader("element face 133\nproperty ushort awesomeness\nproperty list uchar int vertex_indices\nproperty double cuteness\nend_header"));
+
+        assertThat(header.getCount(), equalTo(133));
+        assertThat(header.getStride(), equalTo(11));
+        assertThat(header.getIndexListSizeProperty().getType(), equalTo(StanfordImporter.Type.UnsignedChar));
+        assertThat(header.getIndexListSizeProperty().getOffset(), equalTo(2));
+        assertThat(header.getIndexListProperty().getType(), equalTo(StanfordImporter.Type.Int));
+        assertThat(header.getIndexListProperty().getOffset(), equalTo(3));
+    };
+
+    @Test
+    public void parseFaceElementHeaderWrong() throws StanfordImporter.Exception, IOException {
+        expectedEx.expect(StanfordImporter.Exception.class);
+        expectedEx.expectMessage("StanfordImporter: wrong face element header: element cafe 128");
+
+        StanfordImporter.FaceElementHeader header = StanfordImporter.parseFaceElementHeader(
+            stringReader("element cafe 128"));
+    }
+
+    @Test
+    public void parseFaceElementHeaderWrongProperty() throws StanfordImporter.Exception, IOException {
+        expectedEx.expect(StanfordImporter.Exception.class);
+        expectedEx.expectMessage("StanfordImporter: wrong face property line: property crappy");
+
+        StanfordImporter.FaceElementHeader header = StanfordImporter.parseFaceElementHeader(
+            stringReader("element face 64\nproperty crappy"));
+    }
 }

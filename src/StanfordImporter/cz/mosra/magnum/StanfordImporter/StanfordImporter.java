@@ -290,8 +290,58 @@ public class StanfordImporter {
     }
 
     /** @brief Parse header for face elements */
-    public static FaceElementHeader parseFaceElementHeader(BufferedReader in) {
-        return null;
+    public static FaceElementHeader parseFaceElementHeader(BufferedReader in) throws StanfordImporter.Exception, IOException {
+        String line = in.readLine();
+        String[] tokens = splitLine(line);
+
+        if(tokens.length != 3 || !tokens[0].equals("element") || !tokens[1].equals("face"))
+            throw new StanfordImporter.Exception("wrong face element header: " + line);
+
+        int count = Integer.parseInt(tokens[2]);
+        int offset = 0;
+        Property indexListSize = null;
+        Property indexList = null;
+
+        for(;;) {
+            /* Save position for possible resetting */
+            in.mark(80);
+
+            line = in.readLine();
+            tokens = splitLine(line);
+
+            /* Skip empty lines and comments */
+            if(tokens.length == 0 || tokens[0].equals("comment"))
+                continue;
+
+            /* No more property lines, end */
+            if(!tokens[0].equals("property")) {
+                in.reset();
+                break;
+            }
+
+            /* List property */
+            if(tokens.length == 5 && tokens[1].equals("list")) {
+
+                /* Vertex indices */
+                if(tokens[4].equals("vertex_indices")) {
+                    indexListSize = new Property(Type.from(tokens[2]), offset);
+                    offset += indexListSize.getType().size();
+                    indexList = new Property(Type.from(tokens[3]), offset);
+                    /* The offset is now varying from face to face */
+
+                /* Ignore unknown list property */
+                } else System.out.println("StanfordImporter: ignoring unknown face list property " + tokens[4]);
+
+            /* Classic property, only add to offset */
+            } else if(tokens.length == 3) {
+                System.out.println("StanfordImporter: ignoring unknown face property " + tokens[2]);
+                offset += Type.from(tokens[1]).size();
+
+            /* Something other */
+            } else throw new StanfordImporter.Exception("wrong face property line: " + line);
+        }
+
+        return new FaceElementHeader(count, offset, indexListSize, indexList);
     }
 
     private static String[] splitLine(String line) throws StanfordImporter.Exception {
