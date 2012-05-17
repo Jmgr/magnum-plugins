@@ -233,8 +233,60 @@ public class StanfordImporter {
     }
 
     /** @brief Parse header for vertex elements */
-    public static VertexElementHeader parseVertexElementHeader(BufferedReader in) {
-        return null;
+    public static VertexElementHeader parseVertexElementHeader(BufferedReader in) throws StanfordImporter.Exception, IOException {
+        String line = in.readLine();
+        String[] tokens = splitLine(line);
+
+        if(tokens.length != 3 || !tokens[0].equals("element") || !tokens[1].equals("vertex"))
+            throw new StanfordImporter.Exception("wrong vertex element header: " + line);
+
+        int count = Integer.parseInt(tokens[2]);
+        int offset = 0;
+        Property x = null;
+        Property y = null;
+        Property z = null;
+
+        for(;;) {
+            /* Save position for possible resetting */
+            in.mark(80);
+
+            line = in.readLine();
+            tokens = splitLine(line);
+
+            /* Skip empty lines and comments */
+            if(tokens.length == 0 || tokens[0].equals("comment"))
+                continue;
+
+            /* No more property lines, end */
+            if(!tokens[0].equals("property")) {
+                in.reset();
+                break;
+            }
+
+            if(tokens.length != 3)
+                throw new StanfordImporter.Exception("wrong vertex property line: " + line);
+
+            /* Property type */
+            Type type = Type.from(tokens[1]);
+
+            /* XYZ properties */
+            if(tokens[2].equals("x")) {
+                if(x != null) throw new StanfordImporter.Exception("duplicit vertex x property line: " + line);
+                x = new Property(type, offset);
+            } else if(tokens[2].equals("y")) {
+                if(y != null) throw new StanfordImporter.Exception("duplicit vertex y property line: " + line);
+                y = new Property(type, offset);
+            } else if(tokens[2].equals("z")) {
+                if(z != null) throw new StanfordImporter.Exception("duplicit vertex z property line: " + line);
+                z = new Property(type, offset);
+
+            /* Ignore unsupported properties */
+            } else System.out.println("StanfordImporter: ignoring unsupported vertex property: " + line);
+
+            offset += type.size();
+        }
+
+        return new VertexElementHeader(count, offset, x, y, z);
     }
 
     /** @brief Parse header for face elements */

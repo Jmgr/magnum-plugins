@@ -84,4 +84,46 @@ public class StanfordImporterTest {
         StanfordImporter.Header header = StanfordImporter.parseHeader(
             stringReader("ply\nformat pencil_drawing 1.0\nend_header\n"));
     }
+
+    @Test
+    public void parseVertexElementHeader() throws StanfordImporter.Exception, IOException {
+        StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
+            stringReader("element vertex 128\nproperty uchar y\nproperty float x\nproperty int unknown\nproperty short z\nproperty uint anotherUnknown\nend_header"));
+
+        assertThat(header.getCount(), equalTo(128));
+        assertThat(header.getStride(), equalTo(15));
+        assertThat(header.getXProperty().getType(), equalTo(StanfordImporter.Type.Float));
+        assertThat(header.getXProperty().getOffset(), equalTo(1));
+        assertThat(header.getYProperty().getType(), equalTo(StanfordImporter.Type.UnsignedChar));
+        assertThat(header.getYProperty().getOffset(), equalTo(0));
+        assertThat(header.getZProperty().getType(), equalTo(StanfordImporter.Type.Short));
+        assertThat(header.getZProperty().getOffset(), equalTo(9));
+    }
+
+    @Test
+    public void parseVertexElementHeaderWrong() throws StanfordImporter.Exception, IOException {
+        expectedEx.expect(StanfordImporter.Exception.class);
+        expectedEx.expectMessage("StanfordImporter: wrong vertex element header: element vertex128");
+
+        StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
+            stringReader("element vertex128"));
+    }
+
+    @Test
+    public void parseVertexElementHeaderWrongProperty() throws StanfordImporter.Exception, IOException {
+        expectedEx.expect(StanfordImporter.Exception.class);
+        expectedEx.expectMessage("StanfordImporter: wrong vertex property line: property floaty");
+
+        StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
+            stringReader("element vertex 64\nproperty floaty"));
+    }
+
+    @Test
+    public void parseVertexElementHeaderDuplicitProperty() throws StanfordImporter.Exception, IOException {
+        expectedEx.expect(StanfordImporter.Exception.class);
+        expectedEx.expectMessage("StanfordImporter: duplicit vertex y property line: property double y");
+
+        StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
+            stringReader("element vertex 64\nproperty char y\nproperty double y"));
+    }
 }
