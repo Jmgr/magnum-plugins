@@ -1,8 +1,7 @@
 package cz.mosra.magnum.StanfordImporter;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import org.junit.Rule;
@@ -15,8 +14,8 @@ import static org.junit.Assert.*;
 public class StanfordImporterTest {
 
     /* Wrapper for all the WTFs. */
-    BufferedReader stringReader(String s) { try {
-        return new BufferedReader(new InputStreamReader(new ByteArrayInputStream(s.getBytes("US-ASCII"))));
+    InputStream stringStream(String s) { try {
+        return new ByteArrayInputStream(s.getBytes("US-ASCII"));
     } catch(UnsupportedEncodingException e) {
         throw new RuntimeException(e);
     }}
@@ -31,7 +30,7 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: wrong file signature blah");
 
         StanfordImporter.Header header = StanfordImporter.parseHeader(
-            stringReader("blah\n"));
+            stringStream("blah\n"));
     }
 
     @Test
@@ -40,21 +39,21 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: the file is too short");
 
         StanfordImporter.Header header = StanfordImporter.parseHeader(
-            stringReader("ply\n"));
+            stringStream("ply\n"));
     }
 
     @Test
     public void parseFormat() throws StanfordImporter.Exception, IOException {
         StanfordImporter.Header header = StanfordImporter.parseHeader(
-            stringReader("ply\nformat binary_little_endian 1.0\nend_header\n"));
+            stringStream("ply\nformat binary_little_endian 1.0\nend_header\n"));
         assertThat(header.getFormat(), equalTo(StanfordImporter.Format.BinaryLittleEndian10));
 
         header = StanfordImporter.parseHeader(
-            stringReader("ply\ncomment blah\nformat binary_big_endian 1.0\nend_header\n"));
+            stringStream("ply\ncomment blah\nformat binary_big_endian 1.0\nend_header\n"));
         assertThat(header.getFormat(), equalTo(StanfordImporter.Format.BinaryBigEndian10));
 
         header = StanfordImporter.parseHeader(
-            stringReader("ply\nformat ascii 1.0\nelement unsupported anything\nend_header\n"));
+            stringStream("ply\nformat ascii 1.0\nelement unsupported anything\nend_header\n"));
         assertThat(header.getFormat(), equalTo(StanfordImporter.Format.Ascii10));
     }
 
@@ -64,7 +63,7 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: duplicit format line: format another");
 
         StanfordImporter.Header header = StanfordImporter.parseHeader(
-            stringReader("ply\nformat binary_little_endian 1.0\nformat another\nend_header\n"));
+            stringStream("ply\nformat binary_little_endian 1.0\nformat another\nend_header\n"));
     }
 
     @Test
@@ -73,7 +72,7 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: unsupported file version 2.0");
 
         StanfordImporter.Header header = StanfordImporter.parseHeader(
-            stringReader("ply\nformat binary_little_endian 2.0\nend_header\n"));
+            stringStream("ply\nformat binary_little_endian 2.0\nend_header\n"));
     }
 
     @Test
@@ -82,13 +81,13 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: unsupported file format pencil_drawing");
 
         StanfordImporter.Header header = StanfordImporter.parseHeader(
-            stringReader("ply\nformat pencil_drawing 1.0\nend_header\n"));
+            stringStream("ply\nformat pencil_drawing 1.0\nend_header\n"));
     }
 
     @Test
     public void parseVertexElementHeader() throws StanfordImporter.Exception, IOException {
         StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
-            stringReader("element vertex 128\nproperty uchar y\nproperty float x\nproperty int unknown\nproperty short z\nproperty uint anotherUnknown\nend_header"));
+            stringStream("element vertex 128\nproperty uchar y\nproperty float x\nproperty int unknown\nproperty short z\nproperty uint anotherUnknown\nend_header"));
 
         assertThat(header.getCount(), equalTo(128));
         assertThat(header.getStride(), equalTo(15));
@@ -106,7 +105,7 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: wrong vertex element header: element vertex128");
 
         StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
-            stringReader("element vertex128"));
+            stringStream("element vertex128"));
     }
 
     @Test
@@ -115,7 +114,7 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: wrong vertex property line: property floaty");
 
         StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
-            stringReader("element vertex 64\nproperty floaty"));
+            stringStream("element vertex 64\nproperty floaty"));
     }
 
     @Test
@@ -124,13 +123,13 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: duplicit vertex y property line: property double y");
 
         StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
-            stringReader("element vertex 64\nproperty char y\nproperty double y"));
+            stringStream("element vertex 64\nproperty char y\nproperty double y"));
     }
 
     @Test
     public void parseFaceElementHeader() throws StanfordImporter.Exception, IOException {
         StanfordImporter.FaceElementHeader header = StanfordImporter.parseFaceElementHeader(
-            stringReader("element face 133\nproperty ushort awesomeness\nproperty list uchar int vertex_indices\nproperty double cuteness\nend_header"));
+            stringStream("element face 133\nproperty ushort awesomeness\nproperty list uchar int vertex_indices\nproperty double cuteness\nend_header"));
 
         assertThat(header.getCount(), equalTo(133));
         assertThat(header.getStride(), equalTo(11));
@@ -146,7 +145,7 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: wrong face element header: element cafe 128");
 
         StanfordImporter.FaceElementHeader header = StanfordImporter.parseFaceElementHeader(
-            stringReader("element cafe 128"));
+            stringStream("element cafe 128"));
     }
 
     @Test
@@ -155,6 +154,6 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: wrong face property line: property crappy");
 
         StanfordImporter.FaceElementHeader header = StanfordImporter.parseFaceElementHeader(
-            stringReader("element face 64\nproperty crappy"));
+            stringStream("element face 64\nproperty crappy"));
     }
 }

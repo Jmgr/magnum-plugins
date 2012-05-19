@@ -1,6 +1,8 @@
 package cz.mosra.magnum.StanfordImporter;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 
 /**
@@ -160,7 +162,9 @@ public class StanfordImporter {
     }
 
     /** @brief Parse file header */
-    public static Header parseHeader(BufferedReader in) throws StanfordImporter.Exception, IOException {
+    public static Header parseHeader(InputStream is) throws StanfordImporter.Exception, IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+
         /* Check file signature */
         String signature = in.readLine();
         if(!signature.equals("ply"))
@@ -209,12 +213,12 @@ public class StanfordImporter {
                 /* Vertex element header */
                 if(tokens[1].equals("vertex")) {
                     in.reset();
-                    vertexElementHeader = parseVertexElementHeader(in);
+                    vertexElementHeader = parseVertexElementHeader(is);
 
                 /* Face element header */
                 } else if(tokens[1].equals("face")) {
                     in.reset();
-                    faceElementHeader = parseFaceElementHeader(in);
+                    faceElementHeader = parseFaceElementHeader(is);
 
                 /* Unknown element */
                 } else System.out.println("StanfordImporter: ignoring unknown element " + tokens[1]);
@@ -233,7 +237,9 @@ public class StanfordImporter {
     }
 
     /** @brief Parse header for vertex elements */
-    public static VertexElementHeader parseVertexElementHeader(BufferedReader in) throws StanfordImporter.Exception, IOException {
+    public static VertexElementHeader parseVertexElementHeader(InputStream is) throws StanfordImporter.Exception, IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+
         String line = in.readLine();
         String[] tokens = splitLine(line);
 
@@ -290,7 +296,9 @@ public class StanfordImporter {
     }
 
     /** @brief Parse header for face elements */
-    public static FaceElementHeader parseFaceElementHeader(BufferedReader in) throws StanfordImporter.Exception, IOException {
+    public static FaceElementHeader parseFaceElementHeader(InputStream is) throws StanfordImporter.Exception, IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+
         String line = in.readLine();
         String[] tokens = splitLine(line);
 
