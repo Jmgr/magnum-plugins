@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -474,6 +476,81 @@ public class StanfordImporter {
         return ret;
     }
 
+    /**
+     * @brief Open file and load its contents
+     *
+     * @see close(), getHeader(), getVertices(), getIndices()
+     */
+    public boolean open(String filename) { try {
+        if(header != null) close();
+
+        FileInputStream fs = new FileInputStream(filename);
+
+        header = parseHeader(fs);
+
+        /*
+            BufferedReader reads more data than necessary (wtf!), so it
+            effectively skips end of the header and stops and undefined
+            position inside the data block, which is PITA. Thus we need to
+            guess! (wtf!) header size and then seek to that exact position in
+            the file.
+
+            BUT! FileInputStream is so crappy that it cannot seek or
+            mark()/reset() (wtf!), so we need to close it, open again and
+            re-read the header.
+        */
+        fs.close();
+        fs = new FileInputStream(filename);
+        fs.skip(header.getSize());
+
+        vertices = parseVertexElements(fs, header.getFormat(), header.getVertexElementHeader());
+        indices = parseFaceElements(fs, header.getFormat(), header.getFaceElementHeader());
+
+        fs.close();
+
+        return true;
+    } catch(StanfordImporter.Exception e) {
+        e.printStackTrace();
+        System.err.println(e.getMessage());
+        return false;
+    } catch(FileNotFoundException e) {
+        e.printStackTrace();
+        System.err.println("StanfordImporter: file not found: " + filename);
+        return false;
+    } catch(IOException e) {
+        e.printStackTrace();
+        System.err.println("StanfordImporter: I/O exception: " + e.getMessage());
+        return false;
+    }}
+
+    /** @brief Close file and destroy loaded data */
+    public void close() {
+        header = null;
+        vertices = null;
+        indices = null;
+    }
+
+    /**
+     * @brief File header
+     *
+     * If no file is currently opened, returns null.
+     */
+    public Header getHeader() { return header; }
+
+    /**
+     * @brief Vertex data
+     *
+     * If no file is currently opened, returns null.
+     */
+    public float[] getVertices() { return vertices; }
+
+    /**
+     * @brief Index data
+     *
+     * If no file is currently opened, returns null.
+     */
+    public int[] getIndices() { return indices; }
+
     private static String[] splitLine(String line) throws StanfordImporter.Exception {
         if(line == null) throw new StanfordImporter.Exception("the file is too short");
         return line.split("\\s+");
@@ -582,4 +659,8 @@ public class StanfordImporter {
             default:            throw new StanfordImporter.Exception("wtf.");
         }
     }
+
+    private Header header = null;
+    private float[] vertices = null;
+    private int[] indices = null;
 }
