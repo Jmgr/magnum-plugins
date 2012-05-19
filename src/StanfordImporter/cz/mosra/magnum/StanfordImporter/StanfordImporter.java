@@ -1,6 +1,8 @@
 package cz.mosra.magnum.StanfordImporter;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -352,8 +354,108 @@ public class StanfordImporter {
         return new FaceElementHeader(count, offset, indexListSize, indexList);
     }
 
+    /**
+     * @brief Parse vertex elements
+     *
+     * Each triple in returned array is three-component XYZ vector.
+     */
+    public static float[] parseVertexElements(InputStream is, Format format, VertexElementHeader header) throws StanfordImporter.Exception, IOException {
+        float[] vertices = new float[header.getCount()*3];
+
+        for(int i = 0; i != header.getCount(); ++i) {
+            byte[] buffer = new byte[header.getStride()];
+            is.read(buffer, 0, header.getStride());
+
+            /* Extract coordinates */
+            vertices[i*3] = extract(buffer, format, header.getXProperty().getType(), header.getXProperty().getOffset());
+            vertices[i*3+1] = extract(buffer, format, header.getYProperty().getType(), header.getYProperty().getOffset());
+            vertices[i*3+2] = extract(buffer, format, header.getZProperty().getType(), header.getZProperty().getOffset());
+        }
+
+        return vertices;
+    }
+
     private static String[] splitLine(String line) throws StanfordImporter.Exception {
         if(line == null) throw new StanfordImporter.Exception("the file is too short");
         return line.split("\\s+");
+    }
+
+    private static float extract(byte[] elements, Format format, Type type, int offset) throws StanfordImporter.Exception, IOException {
+        byte[] reordered = null;
+
+        /* Bytes for little endian format */
+        if(format == Format.BinaryLittleEndian10) {
+            switch(type) {
+                case UnsignedChar:
+                case Char:
+                    reordered = new byte[] { elements[offset] }; break;
+                case UnsignedShort:
+                case Short:
+                    reordered = new byte[] { elements[offset+1],
+                                             elements[offset] }; break;
+                case UnsignedInt:
+                case Int:
+                case Float:
+                    reordered = new byte[] { elements[offset+3],
+                                             elements[offset+2],
+                                             elements[offset+1],
+                                             elements[offset] }; break;
+                case Double:
+                    reordered = new byte[] { elements[offset+7],
+                                             elements[offset+6],
+                                             elements[offset+5],
+                                             elements[offset+4],
+                                             elements[offset+3],
+                                             elements[offset+2],
+                                             elements[offset+1],
+                                             elements[offset] }; break;
+            }
+
+        /* Bytes for big endian format */
+        } else if(format == Format.BinaryBigEndian10) {
+            switch(type) {
+                case UnsignedChar:
+                case Char:
+                    reordered = new byte[] { elements[offset] }; break;
+                case UnsignedShort:
+                case Short:
+                    reordered = new byte[] { elements[offset],
+                                             elements[offset+1] }; break;
+                case UnsignedInt:
+                case Int:
+                case Float:
+                    reordered = new byte[] { elements[offset],
+                                             elements[offset+1],
+                                             elements[offset+2],
+                                             elements[offset+3] }; break;
+                case Double:
+                    reordered = new byte[] { elements[offset],
+                                             elements[offset+1],
+                                             elements[offset+2],
+                                             elements[offset+3],
+                                             elements[offset+4],
+                                             elements[offset+5],
+                                             elements[offset+6],
+                                             elements[offset+7] }; break;
+            }
+
+        /* I don't want to support ASCII. COLLADA has that shit already. */
+        } else throw new StanfordImporter.Exception("unsupported format: " + format);
+
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(reorder(elements, format, type, offset)));
+
+        /* Read the value */
+        switch(type) {
+            case UnsignedChar:  return dis.readUnsignedByte();
+            case Char:          return dis.readByte();
+            case UnsignedShort: return dis.readUnsignedShort();
+            case Short:         return dis.readShort();
+            /* Assholes. http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4077352 */
+            case UnsignedInt:   return dis.readInt() & 0xffffffffL;
+            case Int:           return dis.readInt();
+            case Float:         return dis.readFloat();
+            case Double:        return (float) dis.readDouble();
+            default:            throw new StanfordImporter.Exception("wtf.");
+        }
     }
 }

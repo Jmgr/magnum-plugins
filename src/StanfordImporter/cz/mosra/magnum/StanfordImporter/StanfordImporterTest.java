@@ -156,4 +156,30 @@ public class StanfordImporterTest {
         StanfordImporter.FaceElementHeader header = StanfordImporter.parseFaceElementHeader(
             stringStream("element face 64\nproperty crappy"));
     }
+
+    @Test
+    public void parseVertexElements() throws StanfordImporter.Exception, IOException {
+        StanfordImporter.Format format = StanfordImporter.Format.BinaryBigEndian10;
+        StanfordImporter.VertexElementHeader header = new StanfordImporter.VertexElementHeader(3, 10,
+            new StanfordImporter.Property(StanfordImporter.Type.UnsignedChar, 2),
+            new StanfordImporter.Property(StanfordImporter.Type.Short, 8),
+            new StanfordImporter.Property(StanfordImporter.Type.Int, 3));
+
+        /* I AGGRESIVELY DAMN HATE THIS AMAZINGLY IDIOTICALLY MORONIC LACK OF
+           UNSIGNED TYPES. -1 INSTEAD OF 0xFF? REALLY? */
+        byte[] data = new byte[] {
+            -1, -1, 0x01, 0x00, 0x00, 0x00, 0x03, -1, 0x00, 0x02,
+            -1, -1, 0x04, 0x00, 0x00, 0x00, 0x06, -1, 0x00, 0x05,
+            -1, -1, 0x07, 0x00, 0x00, 0x00, 0x09, -1, 0x00, 0x08
+        };
+
+        ByteArrayInputStream in = new ByteArrayInputStream(data);
+        float[] vertices = StanfordImporter.parseVertexElements(in, format, header);
+
+        assertThat(vertices, equalTo(new float[] {
+            1, 2, 3,
+            4, 5, 6,
+            7, 8, 9
+        }));
+    }
 }
