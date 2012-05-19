@@ -1,5 +1,6 @@
 package cz.mosra.magnum.StanfordImporter;
 
+import java.util.ArrayList;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -367,12 +368,72 @@ public class StanfordImporter {
             is.read(buffer, 0, header.getStride());
 
             /* Extract coordinates */
-            vertices[i*3] = extract(buffer, format, header.getXProperty().getType(), header.getXProperty().getOffset());
-            vertices[i*3+1] = extract(buffer, format, header.getYProperty().getType(), header.getYProperty().getOffset());
-            vertices[i*3+2] = extract(buffer, format, header.getZProperty().getType(), header.getZProperty().getOffset());
+            vertices[i*3] = extractFloat(buffer, format, header.getXProperty().getType(), header.getXProperty().getOffset());
+            vertices[i*3+1] = extractFloat(buffer, format, header.getYProperty().getType(), header.getYProperty().getOffset());
+            vertices[i*3+2] = extractFloat(buffer, format, header.getZProperty().getType(), header.getZProperty().getOffset());
         }
 
         return vertices;
+    }
+
+    /**
+     * @brief Parse face elements
+     *
+     * Each triple in returned index array is one face. Quad faces are
+     * converted to triangle faces. Other faces than triangle and quad are
+     * not supported.
+     */
+    public static int[] parseFaceElements(InputStream is, Format format, FaceElementHeader header) throws StanfordImporter.Exception, IOException {
+        /* Simplification: assuming there is only one list - the one which we
+           need. */
+        ArrayList<Integer> faces = new ArrayList<Integer>();
+
+        for(int i = 0; i != header.getCount(); ++i) {
+            /* Skip data before index list */
+            is.skip(header.getIndexListSizeProperty().getOffset());
+
+            /* Read vertex count for the face */
+            byte[] buffer = new byte[header.getIndexListSizeProperty().getType().size()];
+            is.read(buffer, 0, buffer.length);
+            int vertexCount = extractInt(buffer, format, header.getIndexListSizeProperty().getType(), 0);
+
+            Type type = header.getIndexListProperty().getType();
+            int size = type.size();
+
+            /* Read list data */
+            buffer = new byte[size*vertexCount];
+            is.read(buffer, 0, buffer.length);
+            int offset = 0;
+            if(vertexCount == 3) {
+                faces.add(extractInt(buffer, format, type, offset));
+                faces.add(extractInt(buffer, format, type, offset+=size));
+                faces.add(extractInt(buffer, format, type, offset+=size));
+            } else if(vertexCount == 4) {
+                int first  = extractInt(buffer, format, type, offset);
+                int second = extractInt(buffer, format, type, offset+=size);
+                int third  = extractInt(buffer, format, type, offset+=size);
+                int fourth = extractInt(buffer, format, type, offset+=size);
+
+                faces.add(first);
+                faces.add(second);
+                faces.add(third);
+                faces.add(first);
+                faces.add(third);
+                faces.add(fourth);
+            } else throw new StanfordImporter.Exception("unsupported count of vertices per face: " + vertexCount);
+
+            /* Skip data after index list */
+            is.skip(header.getStride()-header.getIndexListProperty().getOffset());
+        }
+
+        /* Convert this awesome arraylist of N pointers to N objects
+           encapsulating ints with all their useless reflection and whatnot,
+           approximately gilion times bigger than std::vector<int> in C++, to
+           usable array of N ints. */
+        int[] ret = new int[faces.size()];
+        for (int i=0; i < ret.length; i++)
+            ret[i] = faces.get(i);
+        return ret;
     }
 
     private static String[] splitLine(String line) throws StanfordImporter.Exception {
@@ -380,7 +441,7 @@ public class StanfordImporter {
         return line.split("\\s+");
     }
 
-    private static float extract(byte[] elements, Format format, Type type, int offset) throws StanfordImporter.Exception, IOException {
+    private static byte[] reorder(byte[] elements, Format format, Type type, int offset) throws StanfordImporter.Exception, IOException {
         byte[] reordered = null;
 
         /* Bytes for little endian format */
@@ -442,6 +503,10 @@ public class StanfordImporter {
         /* I don't want to support ASCII. COLLADA has that shit already. */
         } else throw new StanfordImporter.Exception("unsupported format: " + format);
 
+        return reordered;
+    }
+
+    private static float extractFloat(byte[] elements, Format format, Type type, int offset) throws StanfordImporter.Exception, IOException {
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(reorder(elements, format, type, offset)));
 
         /* Read the value */
@@ -455,6 +520,27 @@ public class StanfordImporter {
             case Int:           return dis.readInt();
             case Float:         return dis.readFloat();
             case Double:        return (float) dis.readDouble();
+            default:            throw new StanfordImporter.Exception("wtf.");
+        }
+    }
+
+    /* Yeah. Copycat awfulness. Java is so mind-boggigly sloppy that it is
+       TOTALLY FUCKING IMPOSSIBLE to use generic/whatever function to return
+       either float or integer. This must be an goddamn joke. */
+    private static int extractInt(byte[] elements, Format format, Type type, int offset) throws StanfordImporter.Exception, IOException {
+        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(reorder(elements, format, type, offset)));
+
+        /* Read the value */
+        switch(type) {
+            case UnsignedChar:  return dis.readUnsignedByte();
+            case Char:          return dis.readByte();
+            case UnsignedShort: return dis.readUnsignedShort();
+            case Short:         return dis.readShort();
+            /* Assholes. http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4077352 */
+            case UnsignedInt:   return (int) (dis.readInt() & 0xffffffffL);
+            case Int:           return dis.readInt();
+            case Float:         return (int) dis.readFloat();
+            case Double:        return (int) dis.readDouble();
             default:            throw new StanfordImporter.Exception("wtf.");
         }
     }

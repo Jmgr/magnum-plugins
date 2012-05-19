@@ -182,4 +182,26 @@ public class StanfordImporterTest {
             7, 8, 9
         }));
     }
+
+    @Test
+    public void parseFaceElements() throws StanfordImporter.Exception, IOException {
+        StanfordImporter.Format format = StanfordImporter.Format.BinaryLittleEndian10;
+        StanfordImporter.FaceElementHeader header = new StanfordImporter.FaceElementHeader(2, 5,
+            new StanfordImporter.Property(StanfordImporter.Type.UnsignedShort, 1),
+            new StanfordImporter.Property(StanfordImporter.Type.UnsignedInt, 3));
+
+        byte[] data = new byte[] {
+            -1, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, -1, -1,
+            -1, 0x04, 0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x05, 0x00, 0x00, 0x00, -1
+        };
+
+        ByteArrayInputStream in = new ByteArrayInputStream(data);
+        int[] faces = StanfordImporter.parseFaceElements(in, format, header);
+
+        assertThat(faces, equalTo(new int[] {
+            1, 2, 3,
+            2, 3, 4,
+            2, 4, 5
+        }));
+    }
 }
