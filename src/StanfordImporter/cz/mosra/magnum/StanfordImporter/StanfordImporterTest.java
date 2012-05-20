@@ -182,7 +182,7 @@ public class StanfordImporterTest {
             new StanfordImporter.Property(StanfordImporter.Type.Short, 8),
             new StanfordImporter.Property(StanfordImporter.Type.Int, 3));
 
-        /* I AGGRESIVELY DAMN HATE THIS AMAZINGLY IDIOTICALLY MORONIC LACK OF
+        /* I AGGRESIVELY **** HATE THIS AMAZING *********** ******* LACK OF
            UNSIGNED TYPES. -1 INSTEAD OF 0xFF? REALLY? */
         byte[] data = new byte[] {
             -1, -1, 0x01, 0x00, 0x00, 0x00, 0x03, -1, 0x00, 0x02,

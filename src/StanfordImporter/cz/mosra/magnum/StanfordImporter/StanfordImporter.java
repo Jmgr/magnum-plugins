@@ -499,11 +499,11 @@ public class StanfordImporter {
         /*
             BufferedReader reads more data than necessary (wtf!), so it
             effectively skips end of the header and stops and undefined
-            position inside the data block, which is PITA. Thus we need to
+            position inside the data block, which is ****. Thus we need to
             guess! (wtf!) header size and then seek to that exact position in
             the file.
 
-            BUT! FileInputStream is so crappy that it cannot seek or
+            BUT! FileInputStream is so ****** that it cannot seek or
             mark()/reset() (wtf!), so we need to close it, open again and
             re-read the header.
         */
@@ -623,7 +623,7 @@ public class StanfordImporter {
                                              elements[offset+7] }; break;
             }
 
-        /* I don't want to support ASCII. COLLADA has that shit already. */
+        /* I don't want to support ASCII. COLLADA has that **** already. */
         } else throw new StanfordImporter.Exception("unsupported format: " + format);
 
         return reordered;
@@ -638,7 +638,7 @@ public class StanfordImporter {
             case Char:          return dis.readByte();
             case UnsignedShort: return dis.readUnsignedShort();
             case Short:         return dis.readShort();
-            /* Assholes. http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4077352 */
+            /* A******s. http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4077352 */
             case UnsignedInt:   return dis.readInt() & 0xffffffffL;
             case Int:           return dis.readInt();
             case Float:         return dis.readFloat();
@@ -647,9 +647,9 @@ public class StanfordImporter {
         }
     }
 
-    /* Yeah. Copycat awfulness. Java is so mind-boggigly sloppy that it is
-       TOTALLY FUCKING IMPOSSIBLE to use generic/whatever function to return
-       either float or integer. This must be an goddamn joke. */
+    /* Yeah. Copycat awfulness. Java is so ****-******** ****** that it is
+       TOTALLY ******* IMPOSSIBLE to use generic/whatever function to return
+       either float or integer. */
     private static int extractInt(byte[] elements, Format format, Type type, int offset) throws StanfordImporter.Exception, IOException {
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(reorder(elements, format, type, offset)));
 
@@ -659,7 +659,7 @@ public class StanfordImporter {
             case Char:          return dis.readByte();
             case UnsignedShort: return dis.readUnsignedShort();
             case Short:         return dis.readShort();
-            /* Assholes. http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4077352 */
+            /* A******s. http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4077352 */
             case UnsignedInt:   return (int) (dis.readInt() & 0xffffffffL);
             case Int:           return dis.readInt();
             case Float:         return (int) dis.readFloat();
