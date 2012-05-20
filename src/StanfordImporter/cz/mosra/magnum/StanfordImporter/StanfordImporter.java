@@ -1,4 +1,12 @@
+/** @package cz @brief cz */
+/** @package cz.mosra @brief cz.mosra */
+/** @package cz.mosra.magnum @brief cz.mosra.magnum */
+/** @brief Stanford importer Java implementation */
 package cz.mosra.magnum.StanfordImporter;
+
+/** @file
+ * @brief Class cz.mosra.magnum.StanfordImporter.StanfordImporter
+ */
 
 import java.util.ArrayList;
 import java.io.BufferedReader;
