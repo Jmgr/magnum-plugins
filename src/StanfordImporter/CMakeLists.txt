@@ -56,6 +56,20 @@ set(JStanfordImporter_SRCS
 set(CMAKE_JAVA_COMPILE_FLAGS -Xlint)
 add_jar(JStanfordImporter ${JStanfordImporter_SRCS})
 
+install_jar(JStanfordImporter ${MAGNUM_PLUGINS_IMPORTER_INSTALL_DIR})
+
 if(BUILD_TESTS)
     add_junit_test(JStanfordImporterTest cz/mosra/magnum/StanfordImporter/StanfordImporterTest.java)
 endif()
+
+# C++ module
+set(STANFORDIMPORTER_JAR ${MAGNUM_PLUGINS_IMPORTER_INSTALL_DIR}/JStanfordImporter.jar)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/configure.h.cmake ${CMAKE_CURRENT_BINARY_DIR}/configure.h)
+include_directories(${JNI_INCLUDE_DIRS} ${CMAKE_CURRENT_BINARY_DIR})
+
+set(StanfordImporter_SRCS
+    StanfordImporter.cpp
+    )
+
+corrade_add_plugin(StanfordImporter ${MAGNUM_PLUGINS_IMPORTER_INSTALL_DIR} StanfordImporter.conf ${StanfordImporter_SRCS})
+target_link_libraries(StanfordImporter ${MAGNUM_LIBRARY} ${MAGNUM_MESHTOOLS_LIBRARY} ${JAVA_JVM_LIBRARY})
