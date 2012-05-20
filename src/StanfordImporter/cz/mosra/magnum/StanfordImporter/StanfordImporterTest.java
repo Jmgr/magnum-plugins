@@ -1,7 +1,9 @@
 package cz.mosra.magnum.StanfordImporter;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import org.junit.Rule;
@@ -19,6 +21,9 @@ public class StanfordImporterTest {
     } catch(UnsupportedEncodingException e) {
         throw new RuntimeException(e);
     }}
+    BufferedReader stringReader(String s) {
+        return new BufferedReader(new InputStreamReader(stringStream(s)));
+    }
 
     /* Another WTF. */
     @Rule
@@ -87,7 +92,7 @@ public class StanfordImporterTest {
     @Test
     public void parseVertexElementHeader() throws StanfordImporter.Exception, IOException {
         StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
-            stringStream("element vertex 128\nproperty uchar y\nproperty float x\nproperty int unknown\nproperty short z\nproperty uint anotherUnknown\nend_header"));
+            stringReader("element vertex 128\nproperty uchar y\nproperty float x\nproperty int unknown\nproperty short z\nproperty uint anotherUnknown\nend_header"));
 
         assertThat(header.getCount(), equalTo(128));
         assertThat(header.getStride(), equalTo(15));
@@ -105,7 +110,7 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: wrong vertex element header: element vertex128");
 
         StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
-            stringStream("element vertex128"));
+            stringReader("element vertex128"));
     }
 
     @Test
@@ -114,7 +119,7 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: wrong vertex property line: property floaty");
 
         StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
-            stringStream("element vertex 64\nproperty floaty"));
+            stringReader("element vertex 64\nproperty floaty"));
     }
 
     @Test
@@ -123,13 +128,13 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: duplicit vertex y property line: property double y");
 
         StanfordImporter.VertexElementHeader header = StanfordImporter.parseVertexElementHeader(
-            stringStream("element vertex 64\nproperty char y\nproperty double y"));
+            stringReader("element vertex 64\nproperty char y\nproperty double y"));
     }
 
     @Test
     public void parseFaceElementHeader() throws StanfordImporter.Exception, IOException {
         StanfordImporter.FaceElementHeader header = StanfordImporter.parseFaceElementHeader(
-            stringStream("element face 133\nproperty ushort awesomeness\nproperty list uchar int vertex_indices\nproperty double cuteness\nend_header"));
+            stringReader("element face 133\nproperty ushort awesomeness\nproperty list uchar int vertex_indices\nproperty double cuteness\nend_header"));
 
         assertThat(header.getCount(), equalTo(133));
         assertThat(header.getStride(), equalTo(11));
@@ -145,7 +150,7 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: wrong face element header: element cafe 128");
 
         StanfordImporter.FaceElementHeader header = StanfordImporter.parseFaceElementHeader(
-            stringStream("element cafe 128"));
+            stringReader("element cafe 128"));
     }
 
     @Test
@@ -154,7 +159,19 @@ public class StanfordImporterTest {
         expectedEx.expectMessage("StanfordImporter: wrong face property line: property crappy");
 
         StanfordImporter.FaceElementHeader header = StanfordImporter.parseFaceElementHeader(
-            stringStream("element face 64\nproperty crappy"));
+            stringReader("element face 64\nproperty crappy"));
+    }
+
+    @Test
+    public void parseHeader() throws StanfordImporter.Exception, IOException {
+        System.out.println("sasaass");
+        InputStream is = stringStream("ply\nformat binary_little_endian 1.0\nelement vertex 128\nproperty uchar y\nelement face 133\nproperty list uchar int vertex_indices\nend_header\na");
+        StanfordImporter.Header header = StanfordImporter.parseHeader(is);
+
+        assertThat(header.getFormat(), equalTo(StanfordImporter.Format.BinaryLittleEndian10));
+        assertThat(header.getVertexElementHeader().getYProperty().getType(), equalTo(StanfordImporter.Type.UnsignedChar));
+        assertThat(header.getFaceElementHeader().getIndexListSizeProperty().getType(), equalTo(StanfordImporter.Type.UnsignedChar));
+        assertThat(header.getSize(), equalTo(139));
     }
 
     @Test

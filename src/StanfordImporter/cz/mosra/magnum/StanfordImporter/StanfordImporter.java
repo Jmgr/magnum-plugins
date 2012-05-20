@@ -22,6 +22,43 @@ importer.close();
 @endcode
 */
 public class StanfordImporter {
+    /** @brief Buffered reader with character counting */
+    private static class CountingBufferedReader extends BufferedReader {
+        public CountingBufferedReader(InputStreamReader isr) {
+            super(isr);
+            position = 0;
+        }
+
+        public int getPosition() { return position; }
+
+        @Override
+        public void mark(int readAheadLimit) throws IOException {
+            super.mark(readAheadLimit);
+
+            marked = position;
+        }
+
+        @Override
+        public void reset() throws IOException {
+            super.reset();
+
+            if(marked != null) {
+                position = marked;
+                marked = null;
+            }
+        }
+
+        @Override
+        public String readLine() throws IOException {
+            String s = super.readLine();
+            if(s != null)
+                position += s.length()+1; /** @todo Support for CR-LF */
+            return s;
+        }
+
+        private int position;
+        private Integer marked;
+    }
 
     /** @brief Parsing exception for Stanford PLY file format importer */
     public static class Exception extends java.lang.Exception {
@@ -77,10 +114,11 @@ public class StanfordImporter {
     /** @brief File header */
     public static class Header {
         /** @brief Constructor */
-        Header(Format format, VertexElementHeader vertexElementHeader, FaceElementHeader faceElementHeader) {
+        Header(Format format, VertexElementHeader vertexElementHeader, FaceElementHeader faceElementHeader, int size) {
             this.format = format;
             this.vertexElementHeader = vertexElementHeader;
             this.faceElementHeader = faceElementHeader;
+            this.size = size;
         }
 
         /** @brief File format */
@@ -92,9 +130,13 @@ public class StanfordImporter {
         /** @brief Face element header */
         public FaceElementHeader getFaceElementHeader() { return faceElementHeader; }
 
+        /** @brief %Header size */
+        public int getSize() { return size; }
+
         private Format format;
         private VertexElementHeader vertexElementHeader;
         private FaceElementHeader faceElementHeader;
+        private int size;
     }
 
     /** @brief Element property */
@@ -166,7 +208,7 @@ public class StanfordImporter {
 
     /** @brief Parse file header */
     public static Header parseHeader(InputStream is) throws StanfordImporter.Exception, IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        CountingBufferedReader in = new CountingBufferedReader(new InputStreamReader(is));
 
         /* Check file signature */
         String signature = in.readLine();
@@ -216,12 +258,12 @@ public class StanfordImporter {
                 /* Vertex element header */
                 if(tokens[1].equals("vertex")) {
                     in.reset();
-                    vertexElementHeader = parseVertexElementHeader(is);
+                    vertexElementHeader = parseVertexElementHeader(in);
 
                 /* Face element header */
                 } else if(tokens[1].equals("face")) {
                     in.reset();
-                    faceElementHeader = parseFaceElementHeader(is);
+                    faceElementHeader = parseFaceElementHeader(in);
 
                 /* Unknown element */
                 } else System.out.println("StanfordImporter: ignoring unknown element " + tokens[1]);
@@ -236,13 +278,11 @@ public class StanfordImporter {
 
         if(format == null) throw new StanfordImporter.Exception("format line missing!");
 
-        return new Header(format, vertexElementHeader, faceElementHeader);
+        return new Header(format, vertexElementHeader, faceElementHeader, in.getPosition());
     }
 
     /** @brief Parse header for vertex elements */
-    public static VertexElementHeader parseVertexElementHeader(InputStream is) throws StanfordImporter.Exception, IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(is));
-
+    public static VertexElementHeader parseVertexElementHeader(BufferedReader in) throws StanfordImporter.Exception, IOException {
         String line = in.readLine();
         String[] tokens = splitLine(line);
 
@@ -299,9 +339,7 @@ public class StanfordImporter {
     }
 
     /** @brief Parse header for face elements */
-    public static FaceElementHeader parseFaceElementHeader(InputStream is) throws StanfordImporter.Exception, IOException {
-        BufferedReader in = new BufferedReader(new InputStreamReader(is));
-
+    public static FaceElementHeader parseFaceElementHeader(BufferedReader in) throws StanfordImporter.Exception, IOException {
         String line = in.readLine();
         String[] tokens = splitLine(line);
 
