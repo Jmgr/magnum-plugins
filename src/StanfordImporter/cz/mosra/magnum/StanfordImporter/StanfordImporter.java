@@ -100,13 +100,13 @@ public class StanfordImporter {
 
         /** @brief Convert string type to enum type */
         static Type from(String type) throws StanfordImporter.Exception {
-            if(type.equals("uchar")) return Type.UnsignedChar;
-            if(type.equals("char")) return Type.Char;
-            if(type.equals("ushort")) return Type.UnsignedShort;
-            if(type.equals("short")) return Type.Short;
-            if(type.equals("uint")) return Type.UnsignedInt;
-            if(type.equals("int")) return Type.Int;
-            if(type.equals("float")) return Type.Float;
+            if(type.equals("uchar") || type.equals("uint8")) return Type.UnsignedChar;
+            if(type.equals("char") || type.equals("int8")) return Type.Char;
+            if(type.equals("ushort") || type.equals("uint16")) return Type.UnsignedShort;
+            if(type.equals("short") || type.equals("int16")) return Type.Short;
+            if(type.equals("uint") || type.equals("uint32")) return Type.UnsignedInt;
+            if(type.equals("int") || type.equals("int32")) return Type.Int;
+            if(type.equals("float") || type.equals("float32")) return Type.Float;
             if(type.equals("double")) return Type.Double;
 
             throw new StanfordImporter.Exception("unknown property type " + type);
