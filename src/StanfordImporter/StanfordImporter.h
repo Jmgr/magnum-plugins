@@ -22,10 +22,7 @@
 #include "Trade/AbstractImporter.h"
 #include "Trade/MeshData.h"
 
-namespace Magnum { namespace Trade {
-
-/** @brief Stanford importer */
-namespace StanfordImporter {
+namespace Magnum { namespace Trade { namespace StanfordImporter {
 
 /**
 @brief Stanford importer plugin
