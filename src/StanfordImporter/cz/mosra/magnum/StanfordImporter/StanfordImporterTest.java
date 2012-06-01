@@ -14,8 +14,6 @@ import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
 public class StanfordImporterTest {
-
-    /* Wrapper for all the WTFs. */
     InputStream stringStream(String s) { try {
         return new ByteArrayInputStream(s.getBytes("US-ASCII"));
     } catch(UnsupportedEncodingException e) {
@@ -25,7 +23,6 @@ public class StanfordImporterTest {
         return new BufferedReader(new InputStreamReader(stringStream(s)));
     }
 
-    /* Another WTF. */
     @Rule
     public ExpectedException expectedEx = ExpectedException.none();
 
@@ -182,8 +179,6 @@ public class StanfordImporterTest {
             new StanfordImporter.Property(StanfordImporter.Type.Short, 8),
             new StanfordImporter.Property(StanfordImporter.Type.Int, 3));
 
-        /* I AGGRESIVELY **** HATE THIS AMAZING *********** ******* LACK OF
-           UNSIGNED TYPES. -1 INSTEAD OF 0xFF? REALLY? */
         byte[] data = new byte[] {
             -1, -1, 0x01, 0x00, 0x00, 0x00, 0x03, -1, 0x00, 0x02,
             -1, -1, 0x04, 0x00, 0x00, 0x00, 0x06, -1, 0x00, 0x05,

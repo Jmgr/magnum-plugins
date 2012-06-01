@@ -475,9 +475,7 @@ public class StanfordImporter {
         }
 
         /* Convert this awesome arraylist of N pointers to N objects
-           encapsulating ints with all their useless reflection and whatnot,
-           approximately gilion times bigger than std::vector<int> in C++, to
-           usable array of N ints. */
+           encapsulating ints to usable array of N ints. */
         int[] ret = new int[faces.size()];
         for (int i=0; i < ret.length; i++)
             ret[i] = faces.get(i);
@@ -497,15 +495,13 @@ public class StanfordImporter {
         header = parseHeader(fs);
 
         /*
-            BufferedReader reads more data than necessary (wtf!), so it
+            BufferedReader reads more data than necessary, so it
             effectively skips end of the header and stops and undefined
-            position inside the data block, which is ****. Thus we need to
-            guess! (wtf!) header size and then seek to that exact position in
-            the file.
+            position inside the data block. Thus we need to guess header size
+            and then seek to that exact position in the file.
 
-            BUT! FileInputStream is so ****** that it cannot seek or
-            mark()/reset() (wtf!), so we need to close it, open again and
-            re-read the header.
+            BUT FileInputStream cannot seek or mark()/reset(), so we need to
+            close it, open again and skip the header.
         */
         fs.close();
         fs = new FileInputStream(filename);
@@ -623,7 +619,7 @@ public class StanfordImporter {
                                              elements[offset+7] }; break;
             }
 
-        /* I don't want to support ASCII. COLLADA has that **** already. */
+        /* I don't want to support ASCII. COLLADA has that already. */
         } else throw new StanfordImporter.Exception("unsupported format: " + format);
 
         return reordered;
@@ -638,7 +634,6 @@ public class StanfordImporter {
             case Char:          return dis.readByte();
             case UnsignedShort: return dis.readUnsignedShort();
             case Short:         return dis.readShort();
-            /* A******s. http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4077352 */
             case UnsignedInt:   return dis.readInt() & 0xffffffffL;
             case Int:           return dis.readInt();
             case Float:         return dis.readFloat();
@@ -647,9 +642,6 @@ public class StanfordImporter {
         }
     }
 
-    /* Yeah. Copycat awfulness. Java is so ****-******** ****** that it is
-       TOTALLY ******* IMPOSSIBLE to use generic/whatever function to return
-       either float or integer. */
     private static int extractInt(byte[] elements, Format format, Type type, int offset) throws StanfordImporter.Exception, IOException {
         DataInputStream dis = new DataInputStream(new ByteArrayInputStream(reorder(elements, format, type, offset)));
 
@@ -659,7 +651,6 @@ public class StanfordImporter {
             case Char:          return dis.readByte();
             case UnsignedShort: return dis.readUnsignedShort();
             case Short:         return dis.readShort();
-            /* A******s. http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4077352 */
             case UnsignedInt:   return (int) (dis.readInt() & 0xffffffffL);
             case Int:           return dis.readInt();
             case Float:         return (int) dis.readFloat();
